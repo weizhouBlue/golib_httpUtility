@@ -36,6 +36,11 @@ func HttpClient( severUrl string  , method HttpMethod , requestHeader map[string
 	reponseBody=""
 	reponseHeader=nil
 
+	if len(severUrl) == 0 {
+		err=fmt.Errorf( "empty url " )
+		return
+	}
+
 
 	if timeout > 0 {
 		ctx, _ = context.WithTimeout(context.Background(), time.Duration(timeout) * time.Second )
