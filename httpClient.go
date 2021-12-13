@@ -61,7 +61,7 @@ func HttpClient( severUrl string  , method HttpMethod , requestHeader map[string
 		    pool := x509.NewCertPool()
 		    caCrt, e1 := ioutil.ReadFile(tlsConf.CaPath)
 		    if e1 != nil {
-				err=fmt.Errorf(  "ReadFile err:", e1  )
+				err=fmt.Errorf(  "ReadFile err: %v", e1  )
 		        return
 		    }
 		    pool.AppendCertsFromPEM(caCrt)
@@ -71,7 +71,7 @@ func HttpClient( severUrl string  , method HttpMethod , requestHeader map[string
 		if len(tlsConf.CertPath)!=0 && len(tlsConf.KeyPath)!=0  {
 		    cliCrt, e2 := tls.LoadX509KeyPair( tlsConf.CertPath , tlsConf.KeyPath )
 		    if e2 != nil {
-				err=fmt.Errorf(  "Loadx509keypair err:", e2  )
+				err=fmt.Errorf(  "Loadx509keypair err: %v ", e2  )
 		        return
 		    }
 		    tr.TLSClientConfig.Certificates=[]tls.Certificate{cliCrt}
@@ -79,15 +79,14 @@ func HttpClient( severUrl string  , method HttpMethod , requestHeader map[string
 	}
 
 	if len(unixSkPath)!=0 {
-		 tr.Dial = func( _ , _ string) (net.Conn, error) {
-		 	return net.Dial("unix", unixSkPath  )
-		 	// return	( &net.Dialer{
-				//         KeepAlive: 30 * time.Second,
-				//         DualStack: true,
-				//     }).Dial("unix", unixSkPath  )
-		 }
-
+		tr.DialContext = func( _ context.Context, _, _ string) (net.Conn, error) {
+			return net.DialTimeout("unix", unixSkPath , time.Duration(timeout)*time.Second )
+		}
 	}
+
+	// 必须设置如下 其一，否则，会发现client端 一直keepalive connection，使得client和server端一直 携程泄漏，connection泄漏
+	tr.DisableKeepAlives=true
+	defer tr.CloseIdleConnections()
 
 	//tr.ForceAttemptHTTP2=true
 	// maximum amount of time an idle (keep-alive) connection will remain idle before closing itself
