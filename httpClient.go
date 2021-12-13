@@ -31,6 +31,7 @@ type TlsConf struct {
 	KeyPath string
 }
 
+//短链接完成 一次 请求
 func HttpClient( severUrl string  , method HttpMethod , requestHeader map[string][]string, requestBody string , timeout int , unixSkPath string , tlsConf *TlsConf ) (  returnCode int , reponseBody string , reponseHeader map[string][]string,  err error ){
 
 	var ctx context.Context
